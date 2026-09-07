@@ -637,7 +637,8 @@ input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--ring); }
   .spend-layout { grid-template-columns: 1fr; gap: 14px; min-height: 0; }
   .spend-nav { position: static; height: auto; overflow: visible; background: transparent; border-right: none; border-bottom: 1px solid var(--border); padding: 12px 16px; }
   .spend-main { padding: 20px 16px 48px; }
-  .spend-nav .subnav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .spend-nav .subnav { flex-direction: row; flex-wrap: wrap; overflow-x: visible; gap: 8px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .spend-nav .subnav-items { flex-direction: row; flex-wrap: wrap; gap: 8px; overflow: visible; }  /* Expenses/Reports/Needs approval in a horizontal row, not a column */
   .spend-nav-head { display: none; }  /* hide collapse control on mobile */
   .spend-collapsed .spend-layout { grid-template-columns: 1fr; }  /* never collapse on mobile */
   .spend-collapsed .spend-nav { padding: 12px 16px; }
