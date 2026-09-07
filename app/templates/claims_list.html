@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}My claims — Expense Approval{% endblock %}
+{% block container_class %}main-full{% endblock %}
+{% block content %}
+  <div class="spend-layout">
+    {% include "_spend_nav.html" %}
+    <div class="spend-main">
+      <div class="page-head">
+        <h1 class="page-title">Expenses</h1>
+        <div class="page-head-actions">
+          <button type="button" class="btn btn-ghost" onclick="toggleFilters()">
+            Filters{% if filters_active %} · on{% endif %}
+          </button>
+          <button type="button" class="btn btn-ghost"
+                  hx-get="/claims/views/new/panel?{{ request.url.query }}"
+                  hx-target="#drawer-body" hx-swap="innerHTML"
+                  onclick="openDrawer('Save view')">Save</button>
+          <a class="btn btn-ghost" href="/export/my.csv">Export CSV</a>
+          <a class="btn btn-primary" href="/claims/new"
+             hx-get="/claims/new/panel" hx-target="#drawer-body" hx-swap="innerHTML"
+             onclick="openDrawer('Create expense')">+ New claim</a>
+        </div>
+      </div>
+
+      <div class="status-tabs">
+        <a class="status-tab {% if not active_status %}active{% endif %}" href="/claims">All <span class="st-count">{{ total }}</span></a>
+        <a class="status-tab {% if active_status == 'pending' %}active{% endif %}" href="/claims?status=pending">Pending <span class="st-count">{{ counts.pending }}</span></a>
+        <a class="status-tab {% if active_status == 'approved' %}active{% endif %}" href="/claims?status=approved">Approved <span class="st-count">{{ counts.approved }}</span></a>
+        <a class="status-tab {% if active_status == 'rejected' %}active{% endif %}" href="/claims?status=rejected">Rejected <span class="st-count">{{ counts.rejected }}</span></a>
+        <a class="status-tab {% if active_status == 'withdrawn' %}active{% endif %}" href="/claims?status=withdrawn">Withdrawn <span class="st-count">{{ counts.withdrawn }}</span></a>
+      </div>
+
+      <div id="filter-panel" class="card filter-panel"{% if not filters_active %} hidden{% endif %}>
+        <form method="get" action="/claims" class="filter-grid">
+          <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+              <option value="">Any</option>
+              {% for s in ["pending", "approved", "rejected", "withdrawn"] %}
+              <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select name="category_id">
+              <option value="">Any</option>
+              {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if filters.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group"><label>From date</label><input type="date" name="date_from" value="{{ filters.date_from or '' }}"></div>
+          <div class="form-group"><label>To date</label><input type="date" name="date_to" value="{{ filters.date_to or '' }}"></div>
+          <div class="form-group"><label>Min amount</label><input type="number" step="0.01" name="amount_min" value="{{ filters.amount_min or '' }}"></div>
+          <div class="form-group"><label>Max amount</label><input type="number" step="0.01" name="amount_max" value="{{ filters.amount_max or '' }}"></div>
+          <div class="form-group filter-search"><label>Search</label><input type="text" name="q" value="{{ filters.q or '' }}" placeholder="description or category"></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a class="btn btn-ghost" href="/claims">Clear</a>
+          </div>
+        </form>
+      </div>
+
+      <form method="post" id="bulkform">
+        <div id="selbar" class="selbar" hidden>
+          <span class="selcount"><b id="seln">0</b> selected</span>
+          <button class="btn btn-ghost" type="submit" formaction="/claims/bulk-export">Export</button>
+          <button class="btn btn-danger" type="submit" formaction="/claims/bulk-withdraw"
+                  onclick="return confirm('Withdraw the selected pending claims?')">Withdraw</button>
+        </div>
+        <div class="card">
+          {% if claims %}
+          <div class="table-scroll">
+            <table class="table selectable">
+              <thead>
+                <tr>
+                  <th class="cbcol"><input type="checkbox" id="selall" onclick="toggleAll(this)"></th>
+                  {{ m.sort_th('date','Date', sort, dir, base_qs) }}{{ m.sort_th('merchant','Merchant', sort, dir, base_qs) }}{{ m.sort_th('category','Category', sort, dir, base_qs) }}{{ m.sort_th('amount','Amount', sort, dir, base_qs) }}{{ m.sort_th('status','Status', sort, dir, base_qs) }}<th class="chevcol"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in claims %}
+                <tr class="rowlink" hx-get="/claims/{{ c.id }}/panel" hx-target="#drawer-body" hx-swap="innerHTML" onclick="openDrawer()">
+                  <td class="cbcol" onclick="event.stopPropagation()"><input type="checkbox" class="rowcb" name="claim_ids" value="{{ c.id }}" onclick="updateSel()"></td>
+                  <td>{{ c.expense_date }}</td>
+                  <td>{{ c.merchant or "—" }}</td>
+                  <td>{{ c.category.name }}</td>
+                  <td>{{ m.money(c.amount, c.currency) }}</td>
+                  <td>{{ m.badge(c.status) }}</td>
+                  <td class="chevcol"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="empty-state">No claims match these filters.</div>
+          {% endif %}
+        </div>
+      </form>
+      <div class="spend-summary">
+        <span>Expenses: <b>{{ shown_count }}</b></span>
+        {% if totals %}<span>·</span><span>Total spend: {% for cur, amt in totals %}<b>{{ cur }}&nbsp;{{ amt }}</b>{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleFilters() {
+      const p = document.getElementById('filter-panel');
+      p.hidden = !p.hidden;
+    }
+    function toggleAll(cb) {
+      document.querySelectorAll('.rowcb').forEach(x => x.checked = cb.checked);
+      updateSel();
+    }
+    function updateSel() {
+      const rows = document.querySelectorAll('.rowcb');
+      const sel = document.querySelectorAll('.rowcb:checked').length;
+      document.getElementById('seln').textContent = sel;
+      document.getElementById('selbar').hidden = sel === 0;
+      const all = document.getElementById('selall');
+      if (all) { all.checked = sel > 0 && sel === rows.length; all.indeterminate = sel > 0 && sel < rows.length; }
+    }
+  </script>
+{% endblock %}

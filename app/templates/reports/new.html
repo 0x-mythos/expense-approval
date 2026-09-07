@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}New report — Expense Approval{% endblock %}
+{% block content %}
+  <h1 class="page-title">New report</h1>
+  {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+  <p class="muted">Select pending claims to bundle. All claims in a report must be routed to the same approver.</p>
+
+  <div class="card">
+    <form method="post" action="/reports">
+      <div class="form-group">
+        <label>Report name <span class="muted">(optional)</span></label>
+        <input type="text" name="name" value="{{ form_name or '' }}" placeholder="Leave blank to auto-name “Expense Report <date>”">
+      </div>
+
+      {% if claims %}
+      <div class="table-scroll">
+        <table class="table selectable">
+          <thead>
+            <tr>
+              <th class="cbcol"><input type="checkbox" id="selall" onclick="toggleAll(this)"></th>
+              <th>Date</th><th>Category</th><th>Amount</th><th>Approver</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in claims %}
+            <tr>
+              <td class="cbcol"><input type="checkbox" class="rowcb" name="claim_ids" value="{{ c.id }}"></td>
+              <td>{{ c.expense_date }}</td>
+              <td>{{ c.category.name }}</td>
+              <td>{{ m.money(c.amount, c.currency) }}</td>
+              <td>{{ c.approver.full_name if c.approver else "—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" type="submit">Create report</button>
+        <a class="btn btn-ghost" href="/reports">Cancel</a>
+      </div>
+      {% else %}
+      <div class="empty-state">You have no pending, un-reported claims to bundle. <a href="/claims/new">Submit a claim</a> first.</div>
+      {% endif %}
+    </form>
+  </div>
+
+  <script>
+    function toggleAll(cb) { document.querySelectorAll('.rowcb').forEach(x => x.checked = cb.checked); }
+  </script>
+{% endblock %}

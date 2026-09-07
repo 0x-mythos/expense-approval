@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Create expense — Expense Approval{% endblock %}
+{% block content %}
+  <div class="create-wrap">
+    <a href="{{ '/reports/' ~ report.id if report else '/claims' }}" class="create-back">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      {{ 'Back to report' if report else 'Create expense' }}
+    </a>
+    {% if report %}<p class="muted">New expense will be added to <strong>{{ report.name }}</strong> · routed to {{ report.approver.full_name if report.approver else "—" }}.</p>{% endif %}
+    {% include "_claim_new.html" %}
+  </div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Approvals — Expense Approval{% endblock %}
+{% block container_class %}main-full{% endblock %}
+{% block content %}
+  <div class="spend-layout">
+    {% include "_spend_nav.html" %}
+    <div class="spend-main">
+  <div class="page-head">
+    <h1 class="page-title">Approvals</h1>
+    <a class="btn btn-ghost" href="/export/approvals.csv">Export CSV</a>
+  </div>
+  <p class="muted">Claims routed to you. Select several to act on them at once.</p>
+
+  {% if reports %}
+  <div class="card">
+    <div class="card-head"><h3>Reports awaiting your decision</h3></div>
+    <div class="table-scroll">
+      <table class="table">
+        <thead><tr><th>Report</th><th>From</th><th>Claims</th><th>Total</th></tr></thead>
+        <tbody>
+          {% for r in reports %}
+          <tr class="rowlink" onclick="location.href='/reports/{{ r.id }}'">
+            <td>{{ r.name }}</td>
+            <td>{{ r.submitter.full_name }}</td>
+            <td>{{ r.claims|length }}</td>
+            <td>{{ m.money(r.total, r.currency) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="post" id="bulkform">
+    <div id="selbar" class="selbar" hidden>
+      <span class="selcount"><b id="seln">0</b> selected</span>
+      <button class="btn btn-ghost" type="submit" formaction="/queue/bulk-export">Export</button>
+      <button class="btn btn-primary" type="submit" formaction="/queue/bulk-approve"
+              onclick="return confirm('Approve the selected claims?')">Approve</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Awaiting your decision</h3></div>
+      {% if claims %}
+      <div class="table-scroll">
+        <table class="table selectable">
+          <thead>
+            <tr>
+              <th class="cbcol"><input type="checkbox" id="selall" onclick="toggleAll(this)"></th>
+              <th>Date</th><th>From</th><th>Merchant</th><th>Category</th><th>Amount</th><th class="chevcol"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in claims %}
+            <tr class="rowlink" hx-get="/claims/{{ c.id }}/panel" hx-target="#drawer-body" hx-swap="innerHTML" onclick="openDrawer()">
+              <td class="cbcol" onclick="event.stopPropagation()"><input type="checkbox" class="rowcb" name="claim_ids" value="{{ c.id }}" onclick="updateSel()"></td>
+              <td>{{ c.expense_date }}</td>
+              <td>{{ c.submitter.full_name }}</td>
+              <td>{{ c.merchant or "—" }}</td>
+              <td>{{ c.category.name }}</td>
+              <td>{{ m.money(c.amount, c.currency) }}</td>
+              <td class="chevcol"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">Your queue is empty. 🎉</div>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="card">
+    <div class="card-head"><h3>Decided by you</h3></div>
+    {% if decided %}
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr><th>Decided</th><th>From</th><th>Category</th><th>Amount</th><th>Status</th><th class="chevcol"></th></tr>
+        </thead>
+        <tbody>
+          {% for c in decided %}
+          <tr class="rowlink" hx-get="/claims/{{ c.id }}/panel" hx-target="#drawer-body" hx-swap="innerHTML" onclick="openDrawer()">
+            <td>{{ c.decided_at.strftime('%Y-%m-%d') if c.decided_at else '—' }}</td>
+            <td>{{ c.submitter.full_name }}</td>
+            <td>{{ c.category.name }}</td>
+            <td>{{ m.money(c.amount, c.currency) }}</td>
+            <td>{{ m.badge(c.status) }}</td>
+            <td class="chevcol"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">Nothing decided yet.</div>
+    {% endif %}
+  </div>
+
+  <script>
+    function toggleAll(cb) {
+      document.querySelectorAll('.rowcb').forEach(x => x.checked = cb.checked);
+      updateSel();
+    }
+    function updateSel() {
+      const rows = document.querySelectorAll('.rowcb');
+      const sel = document.querySelectorAll('.rowcb:checked').length;
+      document.getElementById('seln').textContent = sel;
+      document.getElementById('selbar').hidden = sel === 0;
+      const all = document.getElementById('selall');
+      if (all) { all.checked = sel > 0 && sel === rows.length; all.indeterminate = sel > 0 && sel < rows.length; }
+    }
+  </script>
+    </div>
+  </div>
+{% endblock %}

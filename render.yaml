@@ -1,0 +1,47 @@
+# Render Blueprint — deploys the app (Docker) + a managed PostgreSQL.
+# In Render: New → Blueprint → connect the repo → it reads this file.
+#
+# Notes:
+# - Free web instances cold-start after inactivity and have NO persistent disk,
+#   so uploaded receipts are lost on redeploy/restart. For persistent receipts,
+#   switch the web service to a paid plan and add a `disk:` mounted at /app/uploads
+#   (see the commented block below), or move receipts to object storage.
+# - ANTHROPIC_API_KEY is intentionally NOT in this file (sync:false). Set it in the
+#   Render dashboard so the AI helper is enabled; without it the app still runs
+#   (AI degrades gracefully to "unavailable").
+
+databases:
+  - name: expense-approval-db
+    databaseName: expense
+    user: expense
+    plan: free
+
+services:
+  - type: web
+    name: expense-approval
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    # Uncomment on a paid plan to persist uploaded receipts:
+    # disk:
+    #   name: uploads
+    #   mountPath: /app/uploads
+    #   sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: expense-approval-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true          # Render generates a strong secret
+      - key: ANTHROPIC_API_KEY
+        sync: false                  # set manually in the dashboard (secret)
+      - key: AI_MODEL
+        value: claude-haiku-4-5
+      - key: AI_TIMEOUT_SECONDS
+        value: "12"
+      - key: AI_AUTO_CATEGORIZE
+        value: "false"               # flag-only (matches the task spec); set true to also auto-correct

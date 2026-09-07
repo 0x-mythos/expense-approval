@@ -1,0 +1,16 @@
+{% macro badge(status) -%}
+<span class="badge badge-{{ status }}">{{ status }}</span>
+{%- endmacro %}
+
+{% macro action_badge(action) -%}
+<span class="badge badge-{{ action }}">{{ action }}</span>
+{%- endmacro %}
+
+{% macro money(amount, currency) -%}
+<span class="amount">{{ "%.2f"|format(amount|float) }} {{ currency }}</span>
+{%- endmacro %}
+
+{% macro sort_th(key, label, sort, dir, base_qs) -%}
+{% set ndir = 'asc' if (sort == key and dir == 'desc') else 'desc' %}
+<th><a class="sort-th{% if sort == key %} active{% endif %}" href="/claims?{{ base_qs }}{% if base_qs %}&{% endif %}sort={{ key }}&dir={{ ndir }}">{{ label }}{% if sort == key %} <span class="sort-arrow">{{ '▾' if dir == 'desc' else '▴' }}</span>{% endif %}</a></th>
+{%- endmacro %}

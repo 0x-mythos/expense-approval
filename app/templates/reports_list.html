@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Reports — Expense Approval{% endblock %}
+{% block container_class %}main-full{% endblock %}
+{% block content %}
+  <div class="spend-layout">
+    {% include "_spend_nav.html" %}
+    <div class="spend-main">
+      <div class="page-head">
+        <h1 class="page-title">Reports</h1>
+        <a class="btn btn-primary" href="/reports/new">+ New report</a>
+      </div>
+      <p class="muted">Bundle several pending expenses into one report — submit, approve and reimburse together. Tick several to act on them at once.</p>
+
+      {% if reports %}
+      <form method="post" id="repform">
+        <div id="rep-selbar" class="selbar" hidden>
+          <span class="selcount"><b id="rep-seln">0</b> selected</span>
+          <button class="btn btn-primary" type="submit" formaction="/reports/bulk-submit"
+                  onclick="return confirm('Submit the selected draft reports for approval?')">Submit</button>
+          <button class="btn btn-ghost" type="submit" formaction="/reports/bulk-duplicate">Duplicate</button>
+          <button class="btn btn-ghost" type="button" onclick="repExport()">Export PDF</button>
+          <button class="btn btn-danger" type="submit" formaction="/reports/bulk-delete"
+                  onclick="return confirm('Delete the selected DRAFT reports? Only drafts are deleted; their expenses return to your list.')">Delete</button>
+        </div>
+
+        <div class="card">
+          <div class="table-scroll">
+            <table class="table selectable">
+              <thead>
+                <tr>
+                  <th class="cbcol"><input type="checkbox" id="rep-selall" onclick="repToggleAll(this)"></th>
+                  <th>Date</th><th>Status</th><th>Title</th><th>From</th><th>To</th><th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in reports %}
+                <tr class="rowlink" onclick="location.href='/reports/{{ r.id }}'">
+                  <td class="cbcol" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="rep-cb" name="report_ids" value="{{ r.id }}" data-status="{{ r.status }}" onclick="repUpdateSel()">
+                  </td>
+                  <td>{{ r.created_at.strftime("%b %d") }}</td>
+                  <td>{{ m.badge(r.status) }}</td>
+                  <td>{{ r.name }}</td>
+                  <td>{{ r.submitter.full_name }}</td>
+                  <td>{{ r.approver.full_name if r.approver else "Any approver" }}</td>
+                  <td>{{ m.money(r.total, r.currency) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </form>
+      {% else %}
+      <div class="card"><div class="empty-state">No reports yet — <a href="/reports/new">create one</a>.</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    function repExport(){
+      var ids = Array.prototype.slice.call(document.querySelectorAll('.rep-cb:checked')).map(function(c){ return c.value; });
+      if(!ids.length) return;
+      window.open('/reports/print?ids=' + ids.join(','), '_blank');
+    }
+    function repToggleAll(cb){
+      document.querySelectorAll('.rep-cb').forEach(function(x){ x.checked = cb.checked; });
+      repUpdateSel();
+    }
+    function repUpdateSel(){
+      var rows = document.querySelectorAll('.rep-cb');
+      var sel = document.querySelectorAll('.rep-cb:checked').length;
+      var n = document.getElementById('rep-seln'); if(n) n.textContent = sel;
+      var bar = document.getElementById('rep-selbar'); if(bar) bar.hidden = sel === 0;
+      var all = document.getElementById('rep-selall');
+      if(all){ all.checked = sel > 0 && sel === rows.length; all.indeterminate = sel > 0 && sel < rows.length; }
+    }
+  </script>
+{% endblock %}

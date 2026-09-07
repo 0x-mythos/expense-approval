@@ -1,0 +1,32 @@
+{# Save-view drawer body: name a view built from the currently applied filters. #}
+<form method="post" action="/claims/views" class="saveview-panel">
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" name="name" placeholder="Name" maxlength="120" required autofocus>
+  </div>
+
+  <div class="saveview-summary">
+    <div class="saveview-summary-h">Applied filters</div>
+    {% if summary %}
+    <ul>
+      {% for label, val in summary %}
+      <li><b>{{ label }}:</b> {{ val }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">All expenses (no filters applied)</p>
+    {% endif %}
+  </div>
+
+  <input type="hidden" name="status" value="{{ params.status }}">
+  <input type="hidden" name="category_id" value="{{ params.category_id }}">
+  <input type="hidden" name="date_from" value="{{ params.date_from }}">
+  <input type="hidden" name="date_to" value="{{ params.date_to }}">
+  <input type="hidden" name="amount_min" value="{{ params.amount_min }}">
+  <input type="hidden" name="amount_max" value="{{ params.amount_max }}">
+  <input type="hidden" name="q" value="{{ params.q }}">
+  <input type="hidden" name="sort" value="{{ params.sort }}">
+  <input type="hidden" name="dir" value="{{ params.dir }}">
+
+  <button class="btn btn-primary btn-block saveview-submit" type="submit">Save view</button>
+</form>

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Home — Expense Approval{% endblock %}
+{% block content %}
+  <div class="greeting">
+    <p class="greeting-date">{{ today }}</p>
+    <h1 class="greeting-title">{{ greeting }}, {{ user.full_name.split(' ')[0] }}.</h1>
+  </div>
+
+  <div class="chips">
+    <a class="chip" href="/claims/new"
+       hx-get="/claims/new/panel" hx-target="#drawer-body" hx-swap="innerHTML"
+       onclick="openDrawer('Create expense')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      New claim
+    </a>
+    <a class="chip" href="/claims">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2.4-1.5L14 21l-2-1.3L10 21l-2.6-1.5L5 21V3z"/><path d="M9 8h6M9 12h6"/></svg>
+      My claims
+    </a>
+    {% if user.is_approver %}
+    <a class="chip" href="/queue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      Approvals{% if pending_queue %} <span class="chip-badge">{{ pending_queue }}</span>{% endif %}
+    </a>
+    {% endif %}
+    <a class="chip" href="/export/my.csv">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+      Export
+    </a>
+  </div>
+
+  {% if user.is_approver and pending_queue %}
+  <div class="callout">
+    <span class="callout-ico">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    </span>
+    <div class="callout-body">
+      <strong>{{ pending_queue }} claim(s) awaiting your approval</strong>
+      <div class="muted">Review and decide in your queue.</div>
+    </div>
+    <a class="btn btn-primary" href="/queue">Go to queue</a>
+  </div>
+  {% endif %}
+
+  <div class="grid stats">
+    <div class="stat"><span class="stat-num">{{ counts.pending }}</span><span class="stat-label">Pending</span></div>
+    <div class="stat"><span class="stat-num">{{ counts.approved }}</span><span class="stat-label">Approved</span></div>
+    <div class="stat"><span class="stat-num">{{ counts.rejected }}</span><span class="stat-label">Rejected</span></div>
+    <div class="stat"><span class="stat-num">{{ counts.withdrawn }}</span><span class="stat-label">Withdrawn</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Claims by status</h3></div>
+    {% if total %}
+      <div class="statusbar">
+        {% if counts.pending %}<span class="statusbar-seg seg-pending" style="width: {{ (counts.pending / total * 100)|round(1) }}%"></span>{% endif %}
+        {% if counts.approved %}<span class="statusbar-seg seg-approved" style="width: {{ (counts.approved / total * 100)|round(1) }}%"></span>{% endif %}
+        {% if counts.rejected %}<span class="statusbar-seg seg-rejected" style="width: {{ (counts.rejected / total * 100)|round(1) }}%"></span>{% endif %}
+        {% if counts.withdrawn %}<span class="statusbar-seg seg-withdrawn" style="width: {{ (counts.withdrawn / total * 100)|round(1) }}%"></span>{% endif %}
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="dot seg-pending"></span>Pending · {{ counts.pending }}</span>
+        <span class="legend-item"><span class="dot seg-approved"></span>Approved · {{ counts.approved }}</span>
+        <span class="legend-item"><span class="dot seg-rejected"></span>Rejected · {{ counts.rejected }}</span>
+        <span class="legend-item"><span class="dot seg-withdrawn"></span>Withdrawn · {{ counts.withdrawn }}</span>
+      </div>
+    {% else %}
+      <div class="empty-state">Not enough data yet — submit a claim to see the breakdown.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Recent claims</h3><a href="/claims" class="viewall-link">View all</a></div>
+    {% if recent %}
+      <div class="table-scroll">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for c in recent %}
+          <tr class="rowlink" hx-get="/claims/{{ c.id }}/panel" hx-target="#drawer-body" hx-swap="innerHTML" onclick="openDrawer()">
+            <td>{{ c.expense_date }}</td>
+            <td>{{ c.category.name }}</td>
+            <td>{{ m.money(c.amount, c.currency) }}</td>
+            <td>{{ m.badge(c.status) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    {% else %}
+      <div class="empty-state">No claims yet — <a href="/claims/new">create your first claim</a>.</div>
+    {% endif %}
+  </div>
+{% endblock %}

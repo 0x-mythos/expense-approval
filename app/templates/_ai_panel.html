@@ -1,0 +1,21 @@
+{% if review.status == "ok" %}
+  <h4>
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2l1.9 5.1L19 9l-5.1 1.9L12 16l-1.9-5.1L5 9l5.1-1.9z"/></svg>
+    AI review
+  </h4>
+  {% if review.summary %}<p class="ai-summary">{{ review.summary }}</p>{% endif %}
+  {% if review.suggested_category and review.suggested_category != review.current_category %}
+    <div class="ai-suggest ai-suggest-warn">Suggested category: <strong>{{ review.suggested_category }}</strong>{% if review.category_reason %} — {{ review.category_reason }}{% endif %}</div>
+  {% elif review.category_reason %}
+    <div class="ai-suggest">Category looks right{% if review.category_reason %} — {{ review.category_reason }}{% endif %}</div>
+  {% endif %}
+  {% if review.flag %}
+    <div class="ai-flag">Possible inconsistency: {{ review.flag_reason or "amount, category and description may not align." }}</div>
+  {% endif %}
+  <p class="meta">AI is advisory only — you make the final decision.</p>
+{% else %}
+  <div class="ai-unavailable">AI review is unavailable right now. This does not block your decision.</div>
+{% endif %}
+{% if review.no_receipt %}
+  <div class="ai-flag">No receipt attached — like a cash expense with no proof of purchase.</div>
+{% endif %}

@@ -1,0 +1,23 @@
+{% import "_macros.html" as m %}
+{% if claims %}
+<div class="table-scroll">
+<table class="table">
+  <thead>
+    <tr><th>Date</th><th>From</th><th>Category</th><th>Amount</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for c in claims %}
+    <tr>
+      <td>{{ c.expense_date }}</td>
+      <td>{{ c.submitter.full_name }}</td>
+      <td>{{ c.category.name }}</td>
+      <td>{{ m.money(c.amount, c.currency) }}</td>
+      <td><a class="btn btn-primary" href="/claims/{{ c.id }}">Review</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state">Your queue is empty. 🎉</div>
+{% endif %}

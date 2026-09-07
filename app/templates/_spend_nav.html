@@ -1,0 +1,72 @@
+<script>
+  (function(){ try { if (localStorage.getItem('spendCollapsed')==='1') document.documentElement.classList.add('spend-collapsed'); } catch(e){} })();
+</script>
+{% set p = request.url.path %}
+<aside class="spend-nav">
+  <div class="spend-nav-head">
+    <span class="spend-nav-title">Spend</span>
+    <button type="button" class="spend-collapse" onclick="toggleSpendNav()" aria-label="Collapse menu" title="Collapse">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6"/><path d="M18 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
+  <nav class="subnav">
+    <div class="subnav-section" data-section="reports">
+      <button type="button" class="subnav-group" onclick="toggleSection('reports')">
+        <span class="sn-text">Expense reports</span>
+        <svg class="subnav-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+      <div class="subnav-items">
+        <a class="subnav-item {% if p == '/claims' or (p.startswith('/claims/') and not p.startswith('/claims/new')) %}active{% endif %}" href="/claims" title="Expenses">
+          <span class="sn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2.4-1.5L14 21l-2-1.3L10 21l-2.6-1.5L5 21V3z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span><span class="sn-text">Expenses</span>
+        </a>
+        <a class="subnav-item {% if p.startswith('/reports') %}active{% endif %}" href="/reports" title="Reports">
+          <span class="sn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="13" height="13" rx="2"/><path d="M8 20h11a2 2 0 0 0 2-2V9"/></svg></span><span class="sn-text">Reports</span>
+        </a>
+        {% if user.is_approver %}
+        <a class="subnav-item {% if p.startswith('/queue') %}active{% endif %}" href="/queue" title="Needs approval">
+          <span class="sn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.3l2.3 2.3L16 9.5"/></svg></span><span class="sn-text">Needs approval</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% set views = saved_views | default([]) %}
+    <div class="subnav-section" data-section="saved">
+      <button type="button" class="subnav-group" onclick="toggleSection('saved')">
+        <span class="sn-text">Saved</span>
+        <svg class="subnav-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+      </button>
+      <div class="subnav-items">
+        {% for v in views %}
+        <div class="saved-item">
+          <a class="subnav-item saved-link" href="/claims?{{ v.query }}" title="{{ v.name }}">
+            <span class="sn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg></span><span class="sn-text">{{ v.name }}</span>
+          </a>
+          <form method="post" action="/claims/views/{{ v.id }}/delete" class="saved-del-form" onsubmit="return confirm('Delete this saved view?')">
+            <button type="submit" class="saved-del" aria-label="Delete saved view" title="Delete">×</button>
+          </form>
+        </div>
+        {% else %}
+        <span class="subnav-hint sn-text">Save a filter to see it here.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </nav>
+</aside>
+<script>
+  function toggleSpendNav(){
+    var on = document.documentElement.classList.toggle('spend-collapsed');
+    try { localStorage.setItem('spendCollapsed', on ? '1':'0'); } catch(e){}
+  }
+  function toggleSection(key){
+    var el = document.querySelector('.subnav-section[data-section="'+key+'"]');
+    if (!el) return;
+    var on = el.classList.toggle('collapsed');
+    try { localStorage.setItem('sec-'+key, on ? '1':'0'); } catch(e){}
+  }
+  (function(){
+    document.querySelectorAll('.subnav-section[data-section]').forEach(function(el){
+      try { if (localStorage.getItem('sec-'+el.getAttribute('data-section'))==='1') el.classList.add('collapsed'); } catch(e){}
+    });
+  })();
+</script>

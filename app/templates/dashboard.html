@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}My claims — Expense Approval{% endblock %}
+{% block content %}
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1 class="page-title">My claims</h1>
+    <a class="btn btn-primary" href="/claims/new">+ New claim</a>
+  </div>
+
+  {% if user.is_approver and pending_queue %}
+    <div class="flash flash-success">
+      You have {{ pending_queue }} claim(s) awaiting your approval.
+      <a href="/queue">Go to your queue →</a>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div hx-get="/my/table" hx-trigger="every 5s" hx-swap="innerHTML">
+      {% include "_my_claims_table.html" %}
+    </div>
+  </div>
+{% endblock %}

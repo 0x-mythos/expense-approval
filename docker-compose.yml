@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: expense
+      POSTGRES_PASSWORD: expense
+      POSTGRES_DB: expense
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expense -d expense"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://expense:expense@db:5432/expense
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-claude-haiku-4-5}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-12}
+      AI_AUTO_CATEGORIZE: ${AI_AUTO_CATEGORIZE:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist uploaded receipts across container rebuilds/redeploys.
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:
+  uploads:

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Claim #{{ claim.id }} — Expense Approval{% endblock %}
+{% block content %}
+  <a href="/claims" class="muted">← Back to expenses</a>
+  {% include "_claim_detail.html" %}
+{% endblock %}

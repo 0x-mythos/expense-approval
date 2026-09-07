@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reports export</title>
+  <style>
+    body { font-family: "Inter", "Segoe UI", system-ui, sans-serif; color: #0d1b2a; margin: 32px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .rep { margin: 0 0 28px; page-break-inside: avoid; }
+    .rep h2 { font-size: 16px; margin: 0 0 2px; }
+    .rep .meta { color: #56657a; font-size: 12px; margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #e2e8f0; }
+    th { color: #56657a; font-weight: 600; }
+    td.amt, th.amt { text-align: right; white-space: nowrap; }
+    tfoot td { font-weight: 700; border-top: 2px solid #cbd5e1; border-bottom: none; }
+    .status { text-transform: capitalize; }
+    @media print { body { margin: 12mm; } .noprint { display: none; } }
+  </style>
+</head>
+<body>
+  <h1>Expense reports</h1>
+  {% for report in reports %}
+  <div class="rep">
+    <h2>{{ report.name }} — <span class="status">{{ report.status }}</span></h2>
+    <p class="meta">From {{ report.submitter.full_name }} ·
+      {% if report.approver %}decided by {{ report.approver.full_name }}{% else %}open to any approver{% endif %}</p>
+    <table>
+      <thead><tr><th>Date</th><th>Merchant</th><th>Description</th><th>Category</th><th class="amt">Amount</th></tr></thead>
+      <tbody>
+        {% for c in report.claims %}
+        <tr>
+          <td>{{ c.expense_date }}</td>
+          <td>{{ c.merchant or "—" }}</td>
+          <td>{{ c.description }}</td>
+          <td>{{ c.category.name }}</td>
+          <td class="amt">{{ "%.2f"|format(c.amount|float) }} {{ c.currency }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><td colspan="4">Total</td><td class="amt">{{ "%.2f"|format(report.total|float) }} {{ report.currency }}</td></tr></tfoot>
+    </table>
+  </div>
+  {% else %}
+  <p>No reports selected.</p>
+  {% endfor %}
+  <script>window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 300); });</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Expense Approval{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css?v=26">
+  <script src="https://unpkg.com/htmx.org@2.0.4" crossorigin="anonymous"></script>
+</head>
+<body class="{% if user %}has-side{% else %}is-auth{% endif %}">
+  {% if user %}
+    {% set path = request.url.path %}
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="/">
+        <svg class="brand-mark" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="6" fill="#2456d6"/>
+          <path d="M7 12.4l3.3 3.3L17 9" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Expense<b>Approval</b></span>
+      </a>
+
+      <nav class="nav">
+        <a class="nav-item {% if path == '/' %}active{% endif %}" href="/">
+          <span class="ni-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+          </span>
+          Home
+        </a>
+
+        <a class="nav-item {% if path.startswith('/search') %}active{% endif %}" href="/search">
+          <span class="ni-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </span>
+          Search
+        </a>
+
+        <a class="nav-item {% if path == '/claims' or (path.startswith('/claims/') and not path.startswith('/claims/new')) or path.startswith('/reports') or path.startswith('/queue') %}active{% endif %}" href="/claims">
+          <span class="ni-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M16 12.5h2.5"/><path d="M2.5 9.5h19"/></svg>
+          </span>
+          Spend
+        </a>
+
+        <a class="nav-item" href="/claims/new"
+           hx-get="/claims/new/panel" hx-target="#drawer-body" hx-swap="innerHTML"
+           onclick="openDrawer('Create expense')">
+          <span class="ni-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          </span>
+          New claim
+        </a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="side-user">
+          <span class="avatar">{{ user.full_name[0]|upper }}</span>
+          <span class="side-user-meta">
+            <span class="side-user-name">{{ user.full_name }}</span>
+            <span class="side-user-role">{{ "Approver" if user.is_approver else "Employee" }}</span>
+          </span>
+        </div>
+        <a class="nav-item" href="/logout">
+          <span class="ni-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </span>
+          Log out
+        </a>
+      </div>
+    </aside>
+  {% endif %}
+
+  <main class="main">
+    <div class="{% if user %}{% block container_class %}main-inner{% endblock %}{% else %}auth{% endif %}">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  {% if user %}
+    <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <aside id="drawer" class="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <button type="button" class="drawer-close" onclick="closeDrawer()" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <span class="drawer-title">Expense</span>
+      </div>
+      <div id="drawer-body" class="drawer-body"></div>
+    </aside>
+    <script>
+      function openDrawer(title){
+        document.getElementById('drawer').classList.add('open');
+        document.getElementById('drawer-overlay').classList.add('show');
+        document.body.classList.add('drawer-open');
+        var t = document.querySelector('.drawer-title');
+        if (t) t.textContent = title || 'Expense';
+      }
+      function closeDrawer(){
+        document.getElementById('drawer').classList.remove('open');
+        document.getElementById('drawer-overlay').classList.remove('show');
+        document.body.classList.remove('drawer-open');
+      }
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeDrawer(); });
+
+      // Lightweight markdown for chat bubbles: **bold**, bullet lists, paragraphs.
+      function mdLite(raw){
+        var esc = (raw || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        if (esc.indexOf('\n') === -1 && esc.indexOf(' - ') !== -1) esc = esc.replace(/ - /g, '\n- ');
+        esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+        var out = '', inList = false;
+        esc.split(/\r?\n/).forEach(function(ln){
+          var t = ln.trim(), m = t.match(/^[-*]\s+(.*)/);
+          if (m){ if(!inList){out+='<ul>';inList=true;} out+='<li>'+m[1]+'</li>'; }
+          else { if(inList){out+='</ul>';inList=false;} if(t) out+='<p>'+t+'</p>'; }
+        });
+        if (inList) out += '</ul>';
+        return out || '<p></p>';
+      }
+      function renderChatMarkdown(){
+        document.querySelectorAll('.chat-body[data-md]:not([data-done])').forEach(function(el){
+          el.innerHTML = mdLite(el.textContent);
+          el.setAttribute('data-done', '1');
+        });
+        var log = document.querySelector('.chat-log');
+        if (log) log.scrollTop = log.scrollHeight;
+      }
+      document.addEventListener('DOMContentLoaded', renderChatMarkdown);
+      document.body.addEventListener('htmx:afterSwap', renderChatMarkdown);
+    </script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Secrets & local env — must never be baked into the image
+.env
+.env.*
+!.env.example
+
+# Local databases (SQLite dev/preview) and uploaded test receipts
+*.db
+*.sqlite3
+uploads/
+run_local.py
+
+# Python caches / build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# VCS & editor
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+
+# Docs/state that don't belong in the runtime image
+*.md
+!README.md
